@@ -1,0 +1,289 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Book Reader</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{--bg:#faf8f3;--pn:#fff;--tx:#25221d;--mu:#8a847a;--bd:#e2ddd2;--ac:#9a4f12;--st:#e8e3d8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1b1b1d;--pn:#252527;--tx:#e8e6e1;--mu:#98948b;--bd:#38383b;--ac:#e6a35c;--st:#111112}}
+:root[data-theme=dark]{--bg:#1b1b1d;--pn:#252527;--tx:#e8e6e1;--mu:#98948b;--bd:#38383b;--ac:#e6a35c;--st:#111112}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}body{margin:0;height:100%;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--tx);overflow:hidden}
+button,input{font:inherit;color:inherit}
+button{background:var(--pn);border:1px solid var(--bd);border-radius:7px;padding:4px 9px;cursor:pointer}button:hover{border-color:var(--ac)}
+button.on,button.pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+input{background:var(--pn);border:1px solid var(--bd);border-radius:7px;padding:5px 8px;min-width:0}
+#app{display:grid;grid-template-columns:var(--lw,290px) 1fr var(--rw,390px);grid-template-rows:44px 1fr;height:100%;transition:grid-template-columns .2s}
+#app.noL{--lw:0px}#app.noR{--rw:0px}
+header{grid-column:1/-1;display:flex;align-items:center;gap:6px;padding:0 8px;background:var(--pn);border-bottom:1px solid var(--bd);overflow-x:auto;white-space:nowrap}
+header b{max-width:30vw;overflow:hidden;text-overflow:ellipsis}.sp{flex:1}
+#pn{width:58px;text-align:center}
+aside{background:var(--pn);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+#L{border-right:1px solid var(--bd)}#R{border-left:1px solid var(--bd)}
+.noL #L,.noR #R{visibility:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--bd)}.tabs button{flex:1;border:0;border-radius:0;background:none;padding:9px 4px}.tabs button.on{background:none;color:var(--ac);box-shadow:inset 0 -2px var(--ac)}
+aside section{flex:1;overflow:auto;padding:10px;min-height:0}aside section[hidden]{display:none}
+.qb{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.mu{color:var(--mu)}
+.bk{display:flex;gap:6px;align-items:center;padding:8px;border:1px solid var(--bd);border-radius:8px;margin-top:8px;cursor:pointer}.bk.cur{border-color:var(--ac)}.bk span{flex:1;overflow:hidden}.bk small{display:block;color:var(--mu)}
+.row{display:flex;align-items:flex-start;gap:4px;padding:3px 6px}.row:hover{background:var(--bg)}.tg{width:22px;border:0;background:none;padding:0}.tt{flex:1;cursor:pointer}.row small{color:var(--mu)}
+#stage{overflow:auto;background:var(--st);padding:12px;position:relative}
+.pg{position:relative;margin:0 auto 12px;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.25)}
+.pg canvas{position:absolute;left:0;top:0}
+:root[data-theme=dark] .pg canvas{filter:invert(.9) hue-rotate(180deg)}
+.hl{position:absolute;inset:0;z-index:1;pointer-events:none;mix-blend-mode:multiply}
+:root[data-theme=dark] .hl{mix-blend-mode:normal;opacity:.7}
+div.hl div{position:absolute;border-radius:2px;opacity:.55}
+.textLayer{position:absolute;inset:0;overflow:hidden;line-height:1;z-index:2}
+.textLayer span,.textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0 0}
+.textLayer ::selection{background:rgba(0,100,255,.3)}
+#pages{max-width:100%}.ar{position:absolute;inset:0;z-index:3;display:none;cursor:crosshair;touch-action:none}.area .ar{display:block}
+.ar i{position:absolute;border:2px dashed #e33;background:rgba(255,0,0,.12)}
+#empty{max-width:420px;margin:12vh auto;text-align:center}#empty h2{margin:0 0 6px}
+#pop,#hpop{position:fixed;z-index:50;display:none;gap:5px;padding:6px;background:var(--pn);border:1px solid var(--bd);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.c{width:26px;height:26px;border-radius:50%;padding:0;border:2px solid var(--bd)}
+#toast{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:7px 14px;border-radius:20px;display:none;z-index:60;max-width:90vw}
+#out{line-height:1.65}#out h4{margin:12px 0 4px;color:var(--ac)}#out ul{margin:4px 0;padding-left:20px}#out code{background:var(--bg);padding:1px 4px;border-radius:4px}
+.q{background:var(--bg);border-left:3px solid var(--ac);padding:5px 8px;margin:10px 0;font-size:13px;color:var(--mu)}
+.fu{display:flex;gap:6px;padding:8px;border-top:1px solid var(--bd)}.fu input{flex:1}
+.rg{display:flex;gap:5px;align-items:center;margin-bottom:8px}.rg input{width:60px}
+.hc{border:1px solid var(--bd);border-left-width:5px;border-radius:8px;padding:7px 9px;margin-bottom:8px}.hc p{margin:0 0 5px;cursor:pointer}.hc small{color:var(--mu)}.hc button{padding:1px 7px;font-size:12px}
+@media(max-width:899px){
+#app{grid-template-columns:1fr!important}
+aside{position:fixed;top:calc(44px + env(safe-area-inset-top,0px));bottom:env(safe-area-inset-bottom,0px);width:min(90vw,380px);z-index:20;transition:transform .2s;box-shadow:0 0 20px rgba(0,0,0,.35)}
+#L{left:0;transform:translateX(-105%)}#R{right:0;transform:translateX(105%)}
+#app:not(.noL) #L,#app:not(.noR) #R{transform:none}
+.noL #L,.noR #R{visibility:visible}#stage{padding:6px}header b{display:none}}
+</style></head><body>
+<div id="app">
+<header>
+<button id="bL" title="Library, contents, search">☰</button><b id="title">Book Reader</b><span class="sp"></span>
+<button id="pv">‹</button><input id="pn" type="number" min="1"><span id="pt" class="mu">/ –</span><button id="nx">›</button>
+<button id="zo">−</button><span id="zl" class="mu">100%</span><button id="zi">+</button>
+<button id="md" title="Switch between continuous scrolling and one page at a time">↕ Scroll</button><button id="hm" title="Highlighter mode: every selection is highlighted">🖍</button><button id="ky" title="Anthropic API key for explanations">🔑</button><button id="th" title="Light / dark">◐</button><button id="bR" title="Explain & highlights">✨</button>
+</header>
+<aside id="L">
+<div class="tabs"><button data-t="lib" class="on">Library</button><button data-t="toc">Contents</button><button data-t="srch">Search</button></div>
+<section id="lib"><button id="up" class="pri" style="width:100%">＋ Upload PDF books</button><div id="books"></div><p class="mu" id="syncnote" style="font-size:12px">Checking cloud sync…</p></section>
+<section id="toc" hidden><div class="qb"><button id="ce">Collapse all</button><button id="ee">Expand all</button></div><div id="tree"></div></section>
+<section id="srch" hidden><input id="sq" style="width:100%" placeholder="Search in book, press Enter"><div id="sres"></div></section>
+</aside>
+<main id="stage">
+<div id="empty"><h2>📚 Your Book Reader</h2><p class="mu">Upload any PDF, with no size limit. Read it, highlight, and get simple explanations of any text, figure, formula, page or chapter.</p><button class="pri" id="up2">＋ Upload PDF</button></div>
+<div id="pages" hidden></div>
+</main>
+<aside id="R">
+<div class="tabs"><button data-t="ex" class="on">Explain</button><button data-t="hs">Highlights <span id="hcnt"></span></button></div>
+<section id="ex"><div class="qb"><button id="eSel">Selected text</button><button id="eArea">Figure / formula ⛶</button><button id="ePage">This page</button><button id="eCh">This chapter</button></div>
+<div class="rg">Pages <input id="r1" type="number" min="1"> – <input id="r2" type="number" min="1"><button id="eRg">Explain</button></div>
+<div id="out" class="mu">Select text and tap <b>Selected text</b>, draw a box over a graph, image or formula, or explain a whole page, a page range or a chapter. Answers come in simple language with examples.</div></section>
+<div class="fu" id="fu"><input id="fq" placeholder="Ask a follow-up…"><button id="fs" class="pri">Send</button></div>
+<section id="hs" hidden><div class="qb"><button id="cp">Copy all</button><button id="ex2">Export .txt</button></div><div id="hlist"></div></section>
+</aside>
+</div>
+<div id="pop"></div><div id="toast"></div><input type="file" id="file" accept="application/pdf,.pdf" multiple hidden>
+<script>
+(()=>{
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const app=$('#app'),stage=$('#stage'),pages=$('#pages'),pop=$('#pop'),out=$('#out');
+const COLS=['#ffd400','#4cd964','#4aa8ff','#ff6fa5'];let ci=0,hlMode=false;
+const toast=(m,t=2200)=>{const e=$('#toast');e.textContent=m;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',t)};
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const md=s=>esc(s).replace(/^#{1,4} (.+)$/gm,'<h4>$1</h4>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/^[-*] (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g,m=>'<ul>'+m.replace(/\n/g,'')+'</ul>').replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+/* storage: IndexedDB with in-memory fallback */
+const mem={files:{},meta:{}};let db;
+const ready=new Promise(r=>{try{const q=indexedDB.open('bookreader',1);q.onupgradeneeded=()=>{q.result.createObjectStore('files');q.result.createObjectStore('meta')};q.onsuccess=()=>{db=q.result;r()};q.onerror=()=>r()}catch(e){r()}});
+const st=(s,m)=>db.transaction(s,m).objectStore(s),rq=r=>new Promise(a=>{r.onsuccess=()=>a(r.result);r.onerror=()=>a(null)});
+const get=async(s,k)=>{await ready;try{return db?await rq(st(s,'readonly').get(k)):mem[s][k]}catch(e){return mem[s][k]}};
+const put=async(s,k,v)=>{await ready;mem[s][k]=v;try{if(db)await rq(st(s,'readwrite').put(v,k))}catch(e){}};
+const del=async(s,k)=>{await ready;delete mem[s][k];try{if(db)await rq(st(s,'readwrite').delete(k))}catch(e){}};
+const keys=async s=>{await ready;try{return db?await rq(st(s,'readonly').getAllKeys()):Object.keys(mem[s])}catch(e){return Object.keys(mem[s])}};
+/* state */
+let pdf,cur,pg=1,zoom=1,mode='scroll',SC=1,io,flat=[],lastSel=null,pt={};
+const save=()=>{if(cur){put('meta',cur.id,cur);push(cur)}};
+/* cloud sync: db (metadata, highlights, progress) + assets (PDF as base64 text chunks) */
+let ccol,cas,migrated=0,pushT;const CH=12e6;
+const note=t=>{const e=$('#syncnote');if(e)e.textContent=t};
+const b64of=b=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result.slice(x.result.indexOf(',')+1));x.readAsDataURL(b)});
+const docOf=m=>({name:m.name,size:m.size,n:m.n,page:m.page,hl:m.hl||[],added:m.added,chunks:m.chunks,updated:m.updated});
+async function initCloud(){try{if(!window.claude||!claude.use)throw 0;const[d,a,u]=await Promise.all([claude.use('db'),claude.use('assets'),claude.use('user')]);const uid=u&&await u.id();if(!d||!uid)throw 0;
+ cas=a;ccol=d.collection('data/users/'+uid);ccol.onSnapshot(onCloud,()=>{});note(a?'☁ Cloud sync on: books, highlights and reading progress follow you across your devices.':'☁ Read-only sync: highlights and progress sync, but this login cannot upload books.')}
+ catch(e){note('Books and highlights are stored in this browser only. Use Export .txt to back up highlights.')}}
+async function onCloud(snap){let ch=0;
+ for(const c of snap.docChanges())if(c.type==='removed'&&!(cur&&cur.id===c.doc.id)){await del('meta',c.doc.id);await del('files',c.doc.id);ch=1}
+ for(const ds of snap.docs){if(ds.metadata.hasPendingWrites)continue;const d=ds.data();if(!d)continue;const l=await get('meta',ds.id);
+  if(!l){await put('meta',ds.id,{...d,id:ds.id});ch=1}
+  else if((d.updated||0)>(l.updated||0)){Object.assign(l,{name:d.name,page:d.page,hl:d.hl||[],chunks:d.chunks,updated:d.updated});await put('meta',ds.id,l);if(cur&&cur.id===ds.id){cur.hl=l.hl;cur.updated=l.updated;cur.chunks=l.chunks;drawAll();notes()}ch=1}}
+ if(ch)lib();
+ if(!migrated){migrated=1;for(const k of await keys('meta')){const m=await get('meta',k);if(m&&!m.chunks&&await get('files',k))await upCloud(k)}}}
+function push(m){if(!ccol||!m||!m.chunks)return;clearTimeout(pushT);pushT=setTimeout(()=>{m.updated=Date.now();put('meta',m.id,m);ccol.doc(m.id).set(docOf(m)).catch(()=>{})},1200)}
+async function upCloud(id){if(!ccol||!cas)return;const f=await get('files',id),m=cur&&cur.id===id?cur:await get('meta',id);if(!f||!m||m.chunks)return;const ids=[],nc=Math.ceil(f.size/CH)||1;
+ try{for(let i=0;i<nc;i++){toast(`☁ Syncing “${m.name}” ${i+1}/${nc}`,60000);ids.push((await cas.upload(new Blob([await b64of(f.slice(i*CH,(i+1)*CH))],{type:'text/plain'}))).id)}
+  m.chunks=ids;m.updated=Date.now();await put('meta',id,m);await ccol.doc(id).set(docOf(m));toast('☁ Synced “'+m.name+'”');lib()}
+ catch(e){ids.forEach(x=>cas.delete(x).catch(()=>{}));toast('Cloud upload failed (storage full or offline). Book kept on this device.',4000)}}
+async function dlCloud(m){const parts=[];for(let i=0;i<m.chunks.length;i++){toast(`☁ Downloading book ${i+1}/${m.chunks.length}…`,60000);const t=atob((await(await fetch('/_blob/'+m.chunks[i])).text()).trim()),u=new Uint8Array(t.length);for(let j=0;j<t.length;j++)u[j]=t.charCodeAt(j);parts.push(u)}
+ const f=new Blob(parts,{type:'application/pdf'});await put('files',m.id,f);return f}
+/* panes, tabs, theme */
+const small=()=>innerWidth<900;
+if(small())app.classList.add('noL','noR');
+$('#bL').onclick=()=>{app.classList.toggle('noL');if(small())app.classList.add('noR')};
+$('#bR').onclick=()=>{app.classList.toggle('noR');if(small())app.classList.add('noL')};
+$$('.tabs').forEach(t=>t.onclick=e=>{const b=e.target.closest('button');if(!b)return;t.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));const a=t.parentElement;a.querySelectorAll('section').forEach(s=>s.hidden=s.id!==b.dataset.t);if(a.id==='R')$('#fu').style.display=b.dataset.t==='ex'?'flex':'none'});
+const setTheme=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('brTheme',t)}catch(e){}};
+let th0;try{th0=localStorage.getItem('brTheme')}catch(e){}
+setTheme(th0||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+$('#th').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+/* library */
+const fmt=b=>b>1e6?(b/1e6).toFixed(1)+' MB':Math.round(b/1e3)+' KB';
+async function lib(){const el=$('#books');el.innerHTML='';const ms=[];for(const k of await keys('meta')){const m=await get('meta',k);if(m)ms.push(m)}
+ ms.sort((a,b)=>b.added-a.added);if(!ms.length)el.innerHTML='<p class="mu">No books yet.</p>';
+ ms.forEach(m=>{const d=document.createElement('div');d.className='bk'+(cur&&cur.id===m.id?' cur':'');const pr=m.n?Math.round((m.page||1)/m.n*100):0;
+  d.innerHTML=`<span>📖${m.chunks?' ☁':''} ${esc(m.name.replace(/\.pdf$/i,''))}<small>${fmt(m.size)} · ${pr}% read · ${(m.hl||[]).length} highlights</small></span>`;
+  const x=document.createElement('button');x.textContent='✕';x.title='Remove book';let arm=0;
+  x.onclick=async e=>{e.stopPropagation();if(!arm){arm=1;x.textContent='Delete?';setTimeout(()=>{arm=0;x.textContent='✕'},3000);return}if(m.chunks&&ccol){ccol.doc(m.id).delete().catch(()=>{});if(cas)m.chunks.forEach(c=>cas.delete(c).catch(()=>{}))}await del('files',m.id);await del('meta',m.id);if(cur&&cur.id===m.id){cur=pdf=null;pages.hidden=true;$('#empty').hidden=false;$('#title').textContent='Book Reader'}lib()};
+  d.onclick=()=>openBook(m.id);d.append(x);el.append(d)})}
+const pick=()=>$('#file').click();$('#up').onclick=pick;$('#up2').onclick=pick;
+$('#file').onchange=async e=>{const fs=[...e.target.files];e.target.value='';let first;const ups=[];
+ for(const f of fs){const id=Date.now()+'-'+Math.random().toString(36).slice(2,6);toast('Saving '+f.name+'…',8000);await put('files',id,f);await put('meta',id,{id,name:f.name,size:f.size,page:1,n:0,hl:[],added:Date.now()});first=first||id;ups.push(id)}
+ if(first)openBook(first);for(const i of ups)await upCloud(i)};
+/* open + render */
+async function openBook(id){toast('Opening book…',15000);
+ try{let f=await get('files',id);const m0=await get('meta',id);if(!f&&m0&&m0.chunks&&m0.chunks.length)f=await dlCloud(m0);if(!f||!m0)throw 0;cur=m0;cur.hl=cur.hl||[];pt={};
+  pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;cur.n=pdf.numPages;pg=Math.min(cur.page||1,pdf.numPages);
+  try{localStorage.setItem('brLast',id)}catch(e){}
+  $('#title').textContent=cur.name.replace(/\.pdf$/i,'');$('#pt').textContent='/ '+pdf.numPages;$('#pn').max=pdf.numPages;
+  $('#empty').hidden=true;pages.hidden=false;hist=[];save();lib();notes();buildToc();await render();toast('Ready');
+  if(small())app.classList.add('noL');else $$('#L .tabs button')[1].click()
+ }catch(e){toast('Could not open this PDF')}}
+const shellOf=n=>pages.children[n-1];
+async function render(){if(!pdf)return;const tk=++rtok;pages.querySelectorAll('.pg').forEach(e=>{try{e._t&&e._t.cancel()}catch(x){}});
+ const b=(await pdf.getPage(mode==='scroll'?1:pg)).getViewport({scale:1});if(tk!==rtok)return;SC=Math.max(.2,(stage.clientWidth-(small()?12:24))/b.width*zoom);
+ const fr=document.createDocumentFragment(),from=mode==='scroll'?1:pg,to=mode==='scroll'?pdf.numPages:pg;
+ for(let n=from;n<=to;n++){const d=document.createElement('div');d.className='pg';d.dataset.p=n;d.style.width=b.width*SC+'px';d.style.height=b.height*SC+'px';d.innerHTML='<div class="hl"></div><div class="textLayer"></div><div class="ar"></div>';fr.append(d)}
+ io&&io.disconnect();pages.innerHTML='';pages.append(fr);
+ io=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting?drawPage(e.target):freePage(e.target)),{root:stage,rootMargin:'1600px 0px'});[...pages.children].forEach(c=>io.observe(c));
+ $('#pn').value=pg;$('#zl').textContent=Math.round(zoom*100)+'%';$('#md').textContent=mode==='scroll'?'▭ Page':'↕ Scroll';
+ if(mode==='scroll')stage.scrollTop=shellOf(pg).offsetTop-6;else stage.scrollTop=0}
+let rtok=0;
+async function drawPage(el){if(el._r)return;el._r=1;const n=+el.dataset.p;try{const page=await pdf.getPage(n),vp=page.getViewport({scale:SC}),dpr=Math.min(devicePixelRatio||1,2),c=document.createElement('canvas');
+ c.width=vp.width*dpr;c.height=vp.height*dpr;c.style.width=vp.width+'px';c.style.height=vp.height+'px';el.style.width=vp.width+'px';el.style.height=vp.height+'px';el.style.setProperty('--scale-factor',SC);
+ el._t=page.render({canvasContext:c.getContext('2d'),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null});
+ const tc=await page.getTextContent(),tl=el.querySelector('.textLayer');tl.innerHTML='';pdfjsLib.renderTextLayer({textContentSource:tc,container:tl,viewport:vp,textDivs:[]});
+ await el._t.promise;el.querySelector('canvas')?.remove();el.prepend(c);drawHl(el)}catch(e){el._r=0}}
+function freePage(el){if(!el._r)return;try{el._t&&el._t.cancel()}catch(e){}el._r=0;el.querySelector('canvas')?.remove();el.querySelector('.textLayer').innerHTML='';el.querySelector('.hl').innerHTML=''}
+let raf=0;stage.onscroll=()=>{if(mode!=='scroll'||!pdf||raf)return;raf=requestAnimationFrame(()=>{raf=0;const y=stage.scrollTop+stage.clientHeight*.3,k=pages.children;let lo=0,hi=k.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(k[m].offsetTop<=y)lo=m;else hi=m-1}
+ const n=lo+1;if(n!==pg){pg=n;$('#pn').value=n;cur.page=n;clearTimeout(render._s);render._s=setTimeout(save,600)}})};
+function go(n){if(!pdf)return;n=Math.max(1,Math.min(pdf.numPages,Math.round(n)||1));if(small())app.classList.add('noL');
+ if(mode==='scroll'){pg=n;$('#pn').value=n;const e=shellOf(n);if(e)stage.scrollTop=e.offsetTop-6;cur.page=n;clearTimeout(render._s);render._s=setTimeout(save,600);return}
+ if(n!==pg){pg=n;lastSel=null;pop.style.display='none';cur.page=n;clearTimeout(render._s);render._s=setTimeout(save,600)}render()}
+$('#md').onclick=()=>{mode=mode==='scroll'?'page':'scroll';try{localStorage.setItem('brMode',mode)}catch(e){}render()};
+try{mode=localStorage.getItem('brMode')||'scroll'}catch(e){}
+$('#pv').onclick=()=>go(pg-1);$('#nx').onclick=()=>go(pg+1);$('#pn').onchange=e=>go(+e.target.value);
+$('#zi').onclick=()=>{zoom=Math.min(4,zoom*1.2);render()};$('#zo').onclick=()=>{zoom=Math.max(.4,zoom/1.2);render()};
+document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))return;if(e.key==='ArrowRight')go(pg+1);if(e.key==='ArrowLeft')go(pg-1)});
+let rw=0,rt;new ResizeObserver(()=>{if(Math.abs(stage.clientWidth-rw)<3)return;rw=stage.clientWidth;clearTimeout(rt);rt=setTimeout(render,150)}).observe(stage);
+/* contents */
+async function pageOf(it){try{let d=it.dest;if(typeof d==='string')d=await pdf.getDestination(d);return d?(await pdf.getPageIndex(d[0]))+1:null}catch(e){return null}}
+async function buildToc(){const tree=$('#tree');tree.innerHTML='';flat=[];let o=null;try{o=await pdf.getOutline()}catch(e){}
+ if(!o||!o.length){tree.innerHTML='<p class="mu">This PDF has no embedded table of contents. Use page numbers or search.</p>';return}
+ async function walk(items,box,lv){const ps=await Promise.all(items.map(pageOf));
+  for(let i=0;i<items.length;i++){const it=items[i],p=ps[i],kids=it.items||[],w=document.createElement('div'),row=document.createElement('div');
+   row.className='row';row.style.paddingLeft=(4+lv*14)+'px';const tg=document.createElement('button');tg.className='tg';tg.textContent=kids.length?'▸':'';
+   const a=document.createElement('span');a.className='tt';a.textContent=it.title||'(untitled)';a.onclick=()=>p&&go(p);const s=document.createElement('small');s.textContent=p||'';
+   row.append(tg,a,s);w.append(row);if(p)flat.push({p,lv,t:it.title});
+   if(kids.length){const k=document.createElement('div');k.hidden=true;w.append(k);tg.onclick=()=>{k.hidden=!k.hidden;tg.textContent=k.hidden?'▸':'▾'};await walk(kids,k,lv+1)}
+   box.append(w)}}
+ await walk(o,tree,0)}
+const fold=h=>$$('#tree .tg').forEach(t=>{const k=t.closest('.row').nextElementSibling;if(k){k.hidden=h;t.textContent=h?'▸':'▾'}});
+$('#ce').onclick=()=>fold(true);$('#ee').onclick=()=>fold(false);
+/* search */
+const ptext=async n=>pt[n]??=(await(await pdf.getPage(n)).getTextContent()).items.map(i=>i.str).join(' ');
+let sk=0;$('#sq').onkeydown=async e=>{if(e.key!=='Enter'||!pdf)return;const q=e.target.value.trim().toLowerCase(),r=$('#sres'),my=++sk;if(!q)return;r.innerHTML='<p class="mu">Searching…</p>';let n=0,h='';
+ for(let p=1;p<=pdf.numPages&&n<150;p++){const t=await ptext(p);if(my!==sk)return;const i=t.toLowerCase().indexOf(q);if(i>=0){n++;h+=`<div class="hc" style="border-left-color:var(--ac)"><p data-p="${p}">…${esc(t.slice(Math.max(0,i-40),i+90))}…</p><small>Page ${p}</small></div>`}
+  if(p%25===0)r.innerHTML=h||'<p class="mu">Searching…</p>'}
+ r.innerHTML=h||'<p class="mu">No matches.</p>';r.querySelectorAll('p[data-p]').forEach(p=>p.onclick=()=>go(+p.dataset.p))};
+/* highlights */
+function drawHl(el){const h0=el.querySelector('.hl');h0.innerHTML='';const n=+el.dataset.p;cur.hl.filter(h=>h.p===n).forEach(h=>h.r.forEach(r=>{const d=document.createElement('div');d.style.cssText=`left:${r[0]*100}%;top:${r[1]*100}%;width:${r[2]*100}%;height:${r[3]*100}%;background:${h.c}`;h0.append(d)}))}
+const drawAll=()=>pages.querySelectorAll('.pg').forEach(e=>e._r&&drawHl(e));
+function selInfo(){const s=getSelection();if(!s.rangeCount||s.isCollapsed)return null;const rg=s.getRangeAt(0),pgOf=n=>(n.nodeType===1?n:n.parentElement)?.closest('.pg'),el=pgOf(rg.startContainer);if(!el||!el.contains(rg.startContainer)||!rg.startContainer.parentElement.closest('.textLayer'))return null;const pr=el.getBoundingClientRect();
+ const rs=[...rg.getClientRects()].filter(r=>r.width>2&&r.height>2&&r.top+r.height/2>=pr.top&&r.top+r.height/2<=pr.bottom).map(r=>[(r.left-pr.left)/pr.width,(r.top-pr.top)/pr.height,r.width/pr.width,r.height/pr.height]);
+ return{text:s.toString().replace(/\s+/g,' ').trim(),rs,p:+el.dataset.p}}
+function add(c){const s=lastSel;if(!s||!s.rs.length||!s.text)return;cur.hl.push({id:Date.now()+'',p:s.p,t:s.text,c,r:s.rs});save();drawAll();notes();getSelection().removeAllRanges();pop.style.display='none';lastSel=null}
+COLS.forEach((c,i)=>{const b=document.createElement('button');b.className='c';b.style.background=c;b.title='Highlight';b.onclick=()=>{ci=i;add(c)};pop.append(b)});
+[['✨ Explain',()=>explain('sel')],['🧽 Unmark',unmark],['Copy',()=>{navigator.clipboard?.writeText(lastSel?.text||'');pop.style.display='none';toast('Copied')}]].forEach(([l,f])=>{const b=document.createElement('button');b.textContent=l;b.onclick=f;pop.append(b)});
+pop.onmousedown=e=>e.preventDefault();
+let sT;document.addEventListener('selectionchange',()=>{clearTimeout(sT);sT=setTimeout(()=>{const s=pdf&&selInfo();if(!s){if(!hlMode)pop.style.display='none';return}lastSel=s;
+ if(hlMode){add(COLS[ci]);return}const r=getSelection().getRangeAt(0).getBoundingClientRect();pop.style.display='flex';
+ pop.style.left=Math.max(6,Math.min(innerWidth-pop.offsetWidth-6,r.left))+'px';pop.style.top=Math.max(50,Math.min(innerHeight-pop.offsetHeight-8,r.bottom+12))+'px'},hlMode?700:300)});
+$('#hm').onclick=e=>{hlMode=!hlMode;e.currentTarget.classList.toggle('on',hlMode);toast(hlMode?'Highlighter ON: whatever you select is highlighted':'Highlighter off')};
+function unmark(){const s=lastSel;if(!s||!s.rs||!cur)return;const ov=(a,b)=>Math.min(a[0]+a[2],b[0]+b[2])-Math.max(a[0],b[0])>.003&&Math.min(a[1]+a[3],b[1]+b[3])-Math.max(a[1],b[1])>.003;
+ const k=cur.hl.filter(h=>!(h.p===s.p&&h.r.some(r=>s.rs.some(q=>ov(r,q)))));const n=cur.hl.length-k.length;pop.style.display='none';getSelection().removeAllRanges();lastSel=null;
+ if(!n)return toast('No highlight in the selection');cur.hl=k;save();drawAll();notes();toast(n+' highlight'+(n>1?'s':'')+' removed')}
+/* tap a highlight to remove / recolour it */
+const hpop=document.createElement('div');hpop.id='hpop';document.body.append(hpop);let hSel;
+pages.addEventListener('click',e=>{hpop.style.display='none';const el=e.target.closest('.pg');if(!el||!cur||document.body.classList.contains('area')||!getSelection().isCollapsed)return;
+ const r0=el.getBoundingClientRect(),x=(e.clientX-r0.left)/r0.width,y=(e.clientY-r0.top)/r0.height,n=+el.dataset.p;
+ const h=cur.hl.filter(h=>h.p===n).reverse().find(h=>h.r.some(r=>x>=r[0]&&x<=r[0]+r[2]&&y>=r[1]&&y<=r[1]+r[3]));if(!h)return;hSel=h;hpop.innerHTML='';
+ const mk=(t,f)=>{const b=document.createElement('button');b.textContent=t;b.onclick=ev=>{ev.stopPropagation();hpop.style.display='none';f()};hpop.append(b)};
+ mk('🗑 Remove',()=>{cur.hl=cur.hl.filter(y=>y!==hSel);save();drawAll();notes();toast('Highlight removed')});
+ mk('✨ Explain',()=>{lastSel={text:hSel.t,p:hSel.p};explain('sel')});
+ COLS.forEach(c=>{const b=document.createElement('button');b.className='c';b.style.background=c;b.title='Change colour';b.onclick=ev=>{ev.stopPropagation();hSel.c=c;hpop.style.display='none';save();drawAll();notes()};hpop.append(b)});
+ hpop.style.display='flex';hpop.style.left=Math.max(6,Math.min(innerWidth-hpop.offsetWidth-6,e.clientX-60))+'px';hpop.style.top=Math.max(50,Math.min(innerHeight-hpop.offsetHeight-8,e.clientY+14))+'px'});
+document.addEventListener('pointerdown',e=>{if(!hpop.contains(e.target))hpop.style.display='none'},true);
+stage.addEventListener('scroll',()=>{hpop.style.display='none'},{passive:true});
+function notes(){const l=$('#hlist');$('#hcnt').textContent=cur&&cur.hl.length?'('+cur.hl.length+')':'';l.innerHTML='';if(!cur||!cur.hl.length){l.innerHTML='<p class="mu">No highlights yet. Select text in the book and choose a colour.</p>';return}
+ [...cur.hl].sort((a,b)=>a.p-b.p).forEach(h=>{const d=document.createElement('div');d.className='hc';d.style.borderLeftColor=h.c;d.innerHTML=`<p>${esc(h.t)}</p><small>Page ${h.p}</small> `;d.firstChild.onclick=()=>go(h.p);
+  const e=document.createElement('button');e.textContent='Explain';e.onclick=()=>{lastSel={text:h.t,p:h.p};go(h.p);explain('sel')};const x=document.createElement('button');x.textContent='Delete';x.onclick=()=>{cur.hl=cur.hl.filter(y=>y!==h);save();drawAll();notes()};d.append(e,' ',x);l.append(d)})}
+const allText=()=>cur.hl.slice().sort((a,b)=>a.p-b.p).map(h=>`[p.${h.p}] ${h.t}`).join('\n\n');
+$('#cp').onclick=()=>{if(!cur)return;navigator.clipboard?.writeText(allText());toast('Highlights copied')};
+$('#ex2').onclick=async()=>{if(!cur)return;try{const d=await claude.use('downloads');await d.save({filename:cur.name.replace(/\.pdf$/i,'')+'-highlights.txt',data:new Blob([cur.name+'\n\n'+allText()],{type:'text/plain'})})}catch(e){const u=URL.createObjectURL(new Blob([cur.name+'\n\n'+allText()],{type:'text/plain'})),l=document.createElement('a');l.href=u;l.download=cur.name.replace(/\.pdf$/i,'')+'-highlights.txt';l.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}};
+/* area capture */
+let a0,box,aEl;
+const rel=e=>{const r=aEl.getBoundingClientRect();return[Math.max(0,Math.min(r.width,e.clientX-r.left)),Math.max(0,Math.min(r.height,e.clientY-r.top))]};
+pages.onpointerdown=e=>{const a=e.target.closest('.ar');if(!a)return;aEl=a.parentElement;a.setPointerCapture(e.pointerId);a0=rel(e);box=document.createElement('i');a.append(box)};
+pages.onpointermove=e=>{if(!box)return;const p=rel(e);box.style.cssText=`left:${Math.min(a0[0],p[0])}px;top:${Math.min(a0[1],p[1])}px;width:${Math.abs(p[0]-a0[0])}px;height:${Math.abs(p[1]-a0[1])}px`};
+pages.onpointerup=e=>{if(!box)return;const p=rel(e),x=Math.min(a0[0],p[0]),y=Math.min(a0[1],p[1]),w=Math.abs(p[0]-a0[0]),h=Math.abs(p[1]-a0[1]),cv=aEl.querySelector('canvas');box.remove();box=null;document.body.classList.remove('area');if(w<12||h<12||!cv)return;
+ const k=cv.width/aEl.getBoundingClientRect().width,c=document.createElement('canvas');c.width=w*k;c.height=h*k;c.getContext('2d').drawImage(cv,x*k,y*k,w*k,h*k,0,0,w*k,h*k);areaP=+aEl.dataset.p;c.toBlob(b=>explain('area',b),'image/jpeg',.85)};
+let areaP=1;
+$('#eArea').onclick=()=>{if(!pdf)return;document.body.classList.toggle('area');toast('Drag a box over the figure, graph or formula',3500)};
+/* explain via Claude */
+let smp,hist=[],ctl,ttl='';
+const sample=()=>smp??=(window.claude&&claude.use?claude.use('sample').catch(()=>null):Promise.resolve(null));
+const SYS='You are a warm, expert tutor helping an engineer understand a book. Explain in simple, easy English and make it engaging. Use this structure with short headings: Summary, Explanation (step by step, define jargon), Example (a vivid real-world or worked numerical example whenever applicable), Key takeaway. For formulas explain every symbol and give a tiny worked example. For graphs/images say what is shown and how to read it. For chapters or many pages give a big-picture map first. No preamble.';
+const view=h=>{out.className='';out.innerHTML=`<div class="q">${esc(ttl)}</div>`+h.slice(1).map(m=>m.role==='user'?`<div class="q">${esc(m.content)}</div>`:md(m.content)).join('');out.scrollTop=out.scrollHeight};
+const KEY='brKey',MODEL='brModel',DEF='claude-sonnet-5-5';
+const lsg=k=>{try{return localStorage.getItem(k)||''}catch(e){return''}},lss=(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}};
+function keyForm(msg){app.classList.remove('noR');if(small())app.classList.add('noL');$$('#R .tabs button')[0].click();out.className='';
+ out.innerHTML=`<p>${msg||''}</p><b>Anthropic API key</b><input id="ak" type="password" autocomplete="off" style="width:100%;margin:6px 0 10px" placeholder="sk-ant-..."><b>Model</b><input id="am" style="width:100%;margin:6px 0 10px"><button class="pri" id="as">Save</button> <button id="ac">Remove key</button><p class="mu" style="font-size:12px">The key is stored only in this browser and sent only to api.anthropic.com. Use a key with a monthly spend limit and do not enter it on a shared computer.</p>`;
+ $('#ak').value=lsg(KEY);$('#am').value=lsg(MODEL)||DEF;
+ $('#as').onclick=()=>{lss(KEY,$('#ak').value.trim());lss(MODEL,$('#am').value.trim());out.className='mu';out.textContent='Saved. Now select text or choose an explain option.'};
+ $('#ac').onclick=()=>{lss(KEY,'');$('#ak').value='';toast('Key removed')}}
+$('#ky').onclick=()=>keyForm('');
+async function run(msgs,img){const key=lsg(KEY);app.classList.remove('noR');if(small())app.classList.add('noL');$$('#R .tabs button')[0].click();
+ if(!key)return keyForm('Add your Anthropic API key to turn on explanations.');
+ const d=img?await b64of(img):null,body={model:lsg(MODEL)||DEF,max_tokens:2500,stream:true,messages:msgs.map((m,i)=>i===0&&d?{role:m.role,content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:d}},{type:'text',text:m.content}]}:m)};
+ ctl?.abort();ctl=new AbortController();view([...msgs,{role:'assistant',content:'Thinking…'}]);let text='';
+ try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  if(!r.ok){let m='';try{m=(await r.json()).error.message}catch(e){}if(r.status===401)return keyForm('The API key was rejected. Check it and save again.');throw new Error(m||'HTTP '+r.status)}
+  const rd=r.body.getReader(),dc=new TextDecoder();let buf='';
+  for(;;){const{done,value}=await rd.read();if(done)break;buf+=dc.decode(value,{stream:true});const ls=buf.split('\n');buf=ls.pop();
+   for(const l of ls){if(!l.startsWith('data:'))continue;let j;try{j=JSON.parse(l.slice(5))}catch(e){continue}
+    if(j.type==='content_block_delta'&&j.delta&&j.delta.type==='text_delta'){text+=j.delta.text;view([...msgs,{role:'assistant',content:text}])}else if(j.type==='error')throw new Error(j.error.message)}}
+  hist=[...msgs,{role:'assistant',content:text}];view(hist)}
+ catch(e){if(e&&e.name==='AbortError')return;hist=[];out.className='mu';out.textContent='Could not get an explanation: '+(e.message||'network error')}}
+const P=(task,body)=>`${SYS}\n\nBook: ${cur.name}\nTask: ${task}\n\n${body}`;
+async function explain(kind,img){if(!pdf)return toast('Open a book first');pop.style.display='none';
+ if(kind==='sel'){const si=lastSel||selInfo(),t=si&&si.text;if(!t)return toast('Select some text in the book first');const sp=si.p||pg;ttl='Explain: “'+t.slice(0,140)+(t.length>140?'…':'')+'”';const ctx=(await ptext(sp)).slice(0,2500);return run([{role:'user',content:P('Explain the selected passage.',`Selected text:\n"""${t.slice(0,4000)}"""\n\nSurrounding page text for context:\n"""${ctx}"""`)}])}
+ if(kind==='area'){ttl='Explain the selected figure/formula (page '+areaP+')';const ctx=(await ptext(areaP)).slice(0,2500);return run([{role:'user',content:P('Explain the attached image cut from the page (could be a figure, graph, table or formula).',`Page text for context:\n"""${ctx}"""`)}],img)}
+ if(kind==='page'){ttl='Explain page '+pg;const t=(await ptext(pg)).slice(0,9000);const cv=shellOf(mode==='scroll'?pg:1)?.querySelector('canvas');if(!cv)return toast('Page is still loading, try again');return new Promise(r=>cv.toBlob(async b=>r(await run([{role:'user',content:P('Explain this whole page, including any figures, graphs or formulas shown in the attached page image.',`Page ${pg} text:\n"""${t}"""`)}],b)),'image/jpeg',.8))}
+ let a,b;if(kind==='ch'){const tops=flat.filter(x=>x.lv===0).sort((x,y)=>x.p-y.p),L=tops.length>1?tops:flat.slice().sort((x,y)=>x.p-y.p);let i=-1;L.forEach((x,j)=>{if(x.p<=pg)i=j});
+  if(i<0)return toast('No chapter found for this page. Use the page range.');a=L[i].p;b=(L[i+1]?L[i+1].p-1:pdf.numPages);b=Math.max(a,b);ttl='Explain chapter: '+L[i].t}
+ else{a=+$('#r1').value||pg;b=+$('#r2').value||a;if(b<a)[a,b]=[b,a];a=Math.max(1,a);b=Math.min(pdf.numPages,b);ttl=`Explain pages ${a}–${b}`}
+ let t='',n=0;for(let p=a;p<=b&&n<40&&t.length<36000;p++,n++)t+=`\n[Page ${p}]\n`+await ptext(p);
+ toast(b-a+1>n?`Using the first ${n} pages for speed`:'Preparing…');return run([{role:'user',content:P(`Explain pages ${a} to ${b} (${kindName(kind)}).`,`Text:\n"""${t.slice(0,36000)}"""`)}])}
+const kindName=k=>k==='ch'?'a chapter':'a page range';
+$('#eSel').onclick=()=>explain('sel');$('#ePage').onclick=()=>explain('page');$('#eCh').onclick=()=>explain('ch');$('#eRg').onclick=()=>explain('rg');
+const follow=()=>{const q=$('#fq').value.trim();if(!q)return;if(!hist.length)return toast('Ask for an explanation first');$('#fq').value='';run([...hist,{role:'user',content:q}])};
+$('#fs').onclick=follow;$('#fq').onkeydown=e=>{if(e.key==='Enter')follow()};
+/* start */
+(async()=>{initCloud();await lib();let l;try{l=localStorage.getItem('brLast')}catch(e){}if(l&&await get('meta',l))openBook(l);else if(!small()){}})();
+})();
+</script></body></html>
